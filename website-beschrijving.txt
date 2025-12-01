@@ -1,0 +1,26 @@
+BAR Build Order Explorer - Website Beschrijving
+================================================
+
+Link: https://atlasfailed.github.io/build-order/
+
+Korte beschrijving:
+-------------------
+Een interactieve website voor Beyond All Reason spelers om build orders te verkennen op basis van echte high-skill replay data. De tool toont welke eenheden spelers bouwen in verschillende map posities, hoeveel spelers deze keuzes maken, en wat hun gemiddelde skill rating is.
+
+Functionaliteit:
+----------------
+- 8 verschillende positie categorieën (front-1, front-2, eco, air, geo, geo-sea, pond, long-sea)
+- Interactieve boom structuur: klik op een build item om te zien wat spelers daarna bouwen
+- Statistieken per positie: totaal aantal spelers, gemiddelde skill rating, meest voorkomende eerste build
+- Data gebaseerd op geanalyseerde replays van high-skill spelers
+
+Belangrijke opmerking:
+----------------------
+Build orders zijn gebaseerd op player commands (build queues) zoals geregistreerd in replay bestanden, niet op daadwerkelijke build starts of finishes. Dit betekent dat getoonde builds mogelijk niet volledig uitgevoerd zijn tijdens het gevechte.
+
+Technische details:
+-------------------
+- Data verzameld via replay analyse pipeline
+- Automatische deployment via GitHub Actions
+- Website gehost op GitHub Pages
+- Update workflow: nieuwe data toevoegen en pushen naar main branch triggert automatische deployment

@@ -39,7 +39,10 @@ async function loadPosition(positionName) {
         const treeContainer = document.getElementById('treeContainer');
         treeContainer.innerHTML = '<div class="loading">Loading data...</div>';
         
-        const response = await fetch(`../bar-position-analysis/output/position_csvs/${positionName}.csv`);
+        const response = await fetch(`../output/position_csvs/${positionName}.csv`);
+        if (!response.ok) {
+            throw new Error(`Failed to load CSV file: ${response.statusText}`);
+        }
         const csvText = await response.text();
         
         currentData = parseCSV(csvText);
@@ -251,10 +254,15 @@ function showStats(data) {
     const mostCommon = Object.entries(firstBuilds)
         .sort((a, b) => b[1] - a[1])[0];
     
+    let mostCommonHtml = '';
+    if (mostCommon && mostCommon.length > 0) {
+        mostCommonHtml = `<p><strong>Most Common First Build:</strong> ${mostCommon[0]} (${mostCommon[1]} players, ${(mostCommon[1]/totalPlayers*100).toFixed(1)}%)</p>`;
+    }
+    
     statsContent.innerHTML = `
         <p><strong>Total Players:</strong> ${totalPlayers}</p>
         <p><strong>Average Skill:</strong> ${avgSkill} (range: ${minSkill} - ${maxSkill})</p>
-        <p><strong>Most Common First Build:</strong> ${mostCommon[0]} (${mostCommon[1]} players, ${(mostCommon[1]/totalPlayers*100).toFixed(1)}%)</p>
+        ${mostCommonHtml}
     `;
 }
 

@@ -1,0 +1,231 @@
+{
+  "high_skill_openings": [
+    {
+      "opening": [
+        "Metal Extractor",
+        "Metal Extractor",
+        "Metal Extractor",
+        "Wind Turbine",
+        "Wind Turbine"
+      ],
+      "count": 98,
+      "percentage": 40.0
+    },
+    {
+      "opening": [
+        "Metal Extractor",
+        "Metal Extractor",
+        "Metal Extractor",
+        "Vehicle Plant",
+        "Construction Vehicle"
+      ],
+      "count": 13,
+      "percentage": 5.3061224489795915
+    },
+    {
+      "opening": [
+        "Tidal Generator",
+        "Tidal Generator",
+        "Tidal Generator",
+        "Tidal Generator",
+        "Tidal Generator"
+      ],
+      "count": 11,
+      "percentage": 4.489795918367347
+    },
+    {
+      "opening": [
+        "Metal Extractor",
+        "Metal Extractor",
+        "Metal Extractor",
+        "Bot Lab",
+        "Construction Bot"
+      ],
+      "count": 9,
+      "percentage": 3.6734693877551026
+    },
+    {
+      "opening": [
+        "Metal Extractor",
+        "Metal Extractor",
+        "Metal Extractor",
+        "Solar Collector",
+        "Bot Lab"
+      ],
+      "count": 7,
+      "percentage": 2.857142857142857
+    },
+    {
+      "opening": [
+        "Metal Extractor",
+        "Metal Extractor",
+        "Wind Turbine",
+        "Wind Turbine",
+        "Wind Turbine"
+      ],
+      "count": 7,
+      "percentage": 2.857142857142857
+    },
+    {
+      "opening": [
+        "Metal Extractor",
+        "Metal Extractor",
+        "Wind Turbine",
+        "Metal Extractor",
+        "Wind Turbine"
+      ],
+      "count": 6,
+      "percentage": 2.4489795918367347
+    },
+    {
+      "opening": [
+        "Metal Extractor",
+        "Metal Extractor",
+        "Wind Turbine",
+        "Bot Lab",
+        "Sentry"
+      ],
+      "count": 5,
+      "percentage": 2.0408163265306123
+    },
+    {
+      "opening": [
+        "Metal Extractor",
+        "Metal Extractor",
+        "Solar Collector",
+        "Wind Turbine",
+        "Wind Turbine"
+      ],
+      "count": 5,
+      "percentage": 2.0408163265306123
+    },
+    {
+      "opening": [
+        "Metal Extractor",
+        "Wind Turbine",
+        "Wind Turbine",
+        "Wind Turbine",
+        "Wind Turbine"
+      ],
+      "count": 4,
+      "percentage": 1.6326530612244898
+    }
+  ],
+  "mid_skill_openings": [
+    {
+      "opening": [
+        "Metal Extractor",
+        "Metal Extractor",
+        "Metal Extractor",
+        "Wind Turbine",
+        "Wind Turbine"
+      ],
+      "count": 423,
+      "percentage": 42.81376518218624
+    },
+    {
+      "opening": [
+        "Tidal Generator",
+        "Tidal Generator",
+        "Tidal Generator",
+        "Tidal Generator",
+        "Tidal Generator"
+      ],
+      "count": 93,
+      "percentage": 9.412955465587045
+    },
+    {
+      "opening": [
+        "Metal Extractor",
+        "Metal Extractor",
+        "Wind Turbine",
+        "Wind Turbine",
+        "Wind Turbine"
+      ],
+      "count": 55,
+      "percentage": 5.566801619433198
+    },
+    {
+      "opening": [
+        "Metal Extractor",
+        "Metal Extractor",
+        "Wind Turbine",
+        "Metal Extractor",
+        "Wind Turbine"
+      ],
+      "count": 50,
+      "percentage": 5.060728744939271
+    },
+    {
+      "opening": [
+        "Metal Extractor",
+        "Wind Turbine",
+        "Wind Turbine",
+        "Wind Turbine",
+        "Wind Turbine"
+      ],
+      "count": 19,
+      "percentage": 1.9230769230769231
+    },
+    {
+      "opening": [
+        "Metal Extractor",
+        "Metal Extractor",
+        "Metal Extractor",
+        "Bot Lab",
+        "Sentry"
+      ],
+      "count": 18,
+      "percentage": 1.8218623481781375
+    },
+    {
+      "opening": [
+        "Metal Extractor",
+        "Metal Extractor",
+        "Wind Turbine",
+        "Wind Turbine",
+        "Bot Lab"
+      ],
+      "count": 17,
+      "percentage": 1.7206477732793521
+    },
+    {
+      "opening": [
+        "Metal Extractor",
+        "Metal Extractor",
+        "Wind Turbine",
+        "Wind Turbine",
+        "Metal Extractor"
+      ],
+      "count": 13,
+      "percentage": 1.3157894736842104
+    },
+    {
+      "opening": [
+        "Metal Extractor",
+        "Metal Extractor",
+        "Solar Collector",
+        "Vehicle Plant",
+        "Rascal"
+      ],
+      "count": 12,
+      "percentage": 1.214574898785425
+    },
+    {
+      "opening": [
+        "Metal Extractor",
+        "Metal Extractor",
+        "Metal Extractor",
+        "Bot Lab",
+        "Wind Turbine"
+      ],
+      "count": 11,
+      "percentage": 1.1133603238866396
+    }
+  ],
+  "timing_differences": [],
+  "sample_sizes": {
+    "high_skill": 245,
+    "mid_skill": 988
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "api": {
+    "base_url": "https://api.bar-rts.com",
+    "replays_endpoint": "/replays",
+    "replay_detail_endpoint": "/replays/{id}",
+    "timeout_seconds": 30,
+    "max_concurrent_downloads": 50,
+    "max_retries": 3
+  },
+  "filters": {
+    "map_name": "Supreme Isthmus v2.1",
+    "map_id": 579,
+    "preset": "team",
+    "has_bots": false,
+    "ended_normally": true,
+    "min_skill_threshold": 35,
+    "date_from": "2025-07-01",
+    "date_to": "2025-12-31"
+  },
+  "analysis": {
+    "time_window_seconds": 360,
+    "min_game_duration_seconds": 300,
+    "high_skill_threshold": 40,
+    "mid_skill_threshold": 30,
+    "position_clustering": {
+      "algorithm": "DBSCAN",
+      "eps": 800,
+      "min_samples": 3,
+      "map_width": 12288,
+      "map_height": 12288
+    },
+    "build_clustering": {
+      "algorithm": "hierarchical",
+      "max_clusters": 10,
+      "min_cluster_size": 5,
+      "sequence_weight": 0.7,
+      "timing_weight": 0.3
+    }
+  },
+  "output": {
+    "save_individual_games": true,
+    "generate_csv": true,
+    "generate_json": true,
+    "generate_html": true
+  },
+  "paths": {
+    "replays": "data/replays",
+    "parsed": "data/parsed",
+    "analysis": "data/analysis",
+    "reports": "output/reports",
+    "visualizations": "output/visualizations"
+  }
+}
+

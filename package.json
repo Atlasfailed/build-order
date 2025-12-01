@@ -1,0 +1,18 @@
+{
+  "name": "bar-position-analysis",
+  "version": "1.0.0",
+  "description": "Build order analysis for BAR Supreme Isthmus",
+  "scripts": {
+    "parse-demos": "cd .. && npx ts-node bar-position-analysis/src/2-parse-demos.ts",
+    "download": "python3 src/1-download-replays.py",
+    "cluster-positions": "python3 src/3-cluster-positions.py",
+    "cluster-builds": "python3 src/4-cluster-builds.py",
+    "analyze": "python3 src/5-analyze-success.py",
+    "visualize": "python3 src/6-visualize.py",
+    "pipeline": "./run-pipeline.sh",
+    "step": "./run-step.sh"
+  },
+  "author": "",
+  "license": "MIT"
+}
+

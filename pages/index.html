@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BAR Build Order Tree Explorer</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .tree-page-header {
+            text-align: center;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .tree-page-header h1 {
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+            font-size: 2.5rem;
+        }
+        
+        .tree-page-header .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        
+        .position-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        
+        .position-btn {
+            background: var(--container-bg);
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .position-btn:hover {
+            background: var(--hover-bg);
+            border-color: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(88, 166, 255, 0.3);
+        }
+        
+        .position-btn.active {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+            font-weight: bold;
+        }
+        
+        .stats {
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stats h3 {
+            color: var(--accent-color);
+            margin-bottom: 10px;
+        }
+        
+        .tree-container {
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 400px;
+        }
+        
+        .tree-node {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+        
+        .node-content {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: var(--background-color);
+            border-left: 3px solid var(--accent-color);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 4px;
+        }
+        
+        .node-content:hover {
+            background: var(--hover-bg);
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(88, 166, 255, 0.2);
+        }
+        
+        .expand-icon {
+            width: 20px;
+            text-align: center;
+            margin-right: 8px;
+            color: var(--accent-color);
+            font-weight: bold;
+            user-select: none;
+        }
+        
+        .item-name {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-right: 12px;
+            min-width: 200px;
+        }
+        
+        .item-count {
+            background: var(--positive-score);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-right: 12px;
+        }
+        
+        .item-skill {
+            background: var(--accent-color);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .children {
+            display: none;
+            margin-left: 10px;
+            border-left: 2px dotted var(--border-color);
+            padding-left: 10px;
+        }
+        
+        .children.expanded {
+            display: block;
+        }
+        
+        .no-children {
+            opacity: 0.3;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--accent-color);
+            font-size: 1.2em;
+        }
+        
+        .error {
+            background: rgba(220, 53, 69, 0.2);
+            border: 1px solid var(--negative-score);
+            color: var(--negative-score);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-brand">
+                <img src="images/logo.png" alt="Logo" class="nav-logo">
+                BAR Build Trees
+            </a>
+            <button class="nav-toggle" id="navToggle">☰</button>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html" class="nav-link active">Build Trees</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="tree-page-header">
+            <h1>Build Order Explorer</h1>
+            <p class="subtitle">
+                Explore build order paths with player counts and average skill ratings.<br>
+                Click on any build item to expand and see what players built next.
+            </p>
+        </div>
+        
+        <div class="position-selector" id="positionSelector"></div>
+        
+        <div class="stats" id="statsContainer" style="display: none;">
+            <h3>Position Statistics</h3>
+            <div id="statsContent"></div>
+        </div>
+        
+        <div class="tree-container" id="treeContainer">
+            <div class="loading">Select a position to view build orders...</div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align: center; margin: 2rem 0;">
+        <img src="images/logo.png" alt="Logo" class="footer-logo">
+    </div>
+
+    <script src="js/build-tree.js"></script>
+    <script>
+        // Mobile menu toggle
+        document.getElementById('navToggle').addEventListener('click', function() {
+            document.getElementById('navMenu').classList.toggle('active');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BAR Build Order Tree Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #4ecca3;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #a0a0a0;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .position-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        
+        .position-btn {
+            background: linear-gradient(135deg, #2a2a3e 0%, #1f1f2e 100%);
+            color: #e0e0e0;
+            border: 2px solid #3a3a4e;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .position-btn:hover {
+            background: linear-gradient(135deg, #3a3a4e 0%, #2a2a3e 100%);
+            border-color: #4ecca3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(78, 204, 163, 0.3);
+        }
+        
+        .position-btn.active {
+            background: linear-gradient(135deg, #4ecca3 0%, #3aa87c 100%);
+            color: #1a1a2e;
+            border-color: #4ecca3;
+            font-weight: bold;
+        }
+        
+        .stats {
+            background: rgba(42, 42, 62, 0.5);
+            border: 1px solid #3a3a4e;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stats h3 {
+            color: #4ecca3;
+            margin-bottom: 10px;
+        }
+        
+        .tree-container {
+            background: rgba(42, 42, 62, 0.5);
+            border: 1px solid #3a3a4e;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 400px;
+        }
+        
+        .tree-node {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+        
+        .node-content {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: rgba(31, 31, 46, 0.6);
+            border-left: 3px solid #4ecca3;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 4px;
+        }
+        
+        .node-content:hover {
+            background: rgba(58, 58, 78, 0.8);
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(78, 204, 163, 0.2);
+        }
+        
+        .expand-icon {
+            width: 20px;
+            text-align: center;
+            margin-right: 8px;
+            color: #4ecca3;
+            font-weight: bold;
+            user-select: none;
+        }
+        
+        .item-name {
+            font-weight: 500;
+            color: #e0e0e0;
+            margin-right: 12px;
+            min-width: 200px;
+        }
+        
+        .item-count {
+            background: linear-gradient(135deg, #4ecca3 0%, #3aa87c 100%);
+            color: #1a1a2e;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-right: 12px;
+        }
+        
+        .item-skill {
+            background: linear-gradient(135deg, #f48fb1 0%, #e91e63 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .children {
+            display: none;
+            margin-left: 10px;
+            border-left: 2px dotted #3a3a4e;
+            padding-left: 10px;
+        }
+        
+        .children.expanded {
+            display: block;
+        }
+        
+        .no-children {
+            opacity: 0.3;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #4ecca3;
+            font-size: 1.2em;
+        }
+        
+        .error {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid #e74c3c;
+            color: #e74c3c;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌳 BAR Build Order Tree Explorer</h1>
+        <p class="subtitle">Explore build order paths with player counts and average skill ratings</p>
+        
+        <div class="position-selector" id="positionSelector"></div>
+        
+        <div class="stats" id="statsContainer" style="display: none;">
+            <h3>Position Statistics</h3>
+            <div id="statsContent"></div>
+        </div>
+        
+        <div class="tree-container" id="treeContainer">
+            <div class="loading">Select a position to view build orders...</div>
+        </div>
+    </div>
+
+    <script>
+        const positions = [
+            'position_front-1',
+            'position_front-2',
+            'position_eco',
+            'position_air',
+            'position_geo',
+            'position_geo-sea',
+            'position_pond',
+            'position_long-sea'
+        ];
+        
+        let currentData = null;
+        
+        // Initialize position selector
+        function initPositionSelector() {
+            const selector = document.getElementById('positionSelector');
+            positions.forEach(pos => {
+                const btn = document.createElement('button');
+                btn.className = 'position-btn';
+                btn.textContent = pos.replace('position_', '').replace(/-/g, ' ').toUpperCase();
+                btn.onclick = () => loadPosition(pos);
+                selector.appendChild(btn);
+            });
+        }
+        
+        // Load CSV data for a position
+        async function loadPosition(positionName) {
+            try {
+                // Update active button
+                document.querySelectorAll('.position-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.textContent === positionName.replace('position_', '').replace(/-/g, ' ').toUpperCase()) {
+                        btn.classList.add('active');
+                    }
+                });
+                
+                const treeContainer = document.getElementById('treeContainer');
+                treeContainer.innerHTML = '<div class="loading">Loading data...</div>';
+                
+                const response = await fetch(`position_csvs/${positionName}.csv`);
+                const csvText = await response.text();
+                
+                currentData = parseCSV(csvText);
+                buildTree(currentData);
+                showStats(currentData);
+                
+            } catch (error) {
+                document.getElementById('treeContainer').innerHTML = 
+                    `<div class="error">Error loading data: ${error.message}</div>`;
+            }
+        }
+        
+        // Parse CSV data
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split('\n');
+            const headers = lines[0].split(',');
+            
+            const data = {
+                players: [],
+                builds: []
+            };
+            
+            // Find player name row
+            const playerNameRow = lines[1].split(',');
+            
+            // Parse each column (player)
+            for (let col = 1; col < headers.length; col++) {
+                const player = {
+                    id: headers[col],
+                    name: playerNameRow[col],
+                    skill: 0,
+                    builds: []
+                };
+                
+                // Get player skill (row 4)
+                const skillRow = lines[4].split(',');
+                player.skill = parseFloat(skillRow[col]) || 0;
+                
+                // Get build orders (starting from row with "Build 1")
+                let buildNum = 1;
+                for (let row = 0; row < lines.length; row++) {
+                    if (lines[row].startsWith(`Build ${buildNum}`)) {
+                        const buildRow = lines[row].split(',');
+                        if (buildRow[col]) {
+                            const buildItem = buildRow[col].trim();
+                            if (buildItem && buildItem !== '---') {
+                                // Extract item name (remove timestamp)
+                                const match = buildItem.match(/^(.+?)\s*\(/);
+                                if (match) {
+                                    player.builds.push(match[1].trim());
+                                }
+                            }
+                        }
+                        buildNum++;
+                    }
+                }
+                
+                if (player.builds.length > 0) {
+                    data.players.push(player);
+                }
+            }
+            
+            return data;
+        }
+        
+        // Combine consecutive same items into "x3" format
+        function combineConsecutive(items) {
+            if (!items || items.length === 0) return [];
+            
+            const combined = [];
+            let current = { name: items[0], count: 1 };
+            
+            for (let i = 1; i < items.length; i++) {
+                if (items[i] === current.name) {
+                    current.count++;
+                } else {
+                    combined.push(current);
+                    current = { name: items[i], count: 1 };
+                }
+            }
+            combined.push(current);
+            
+            return combined;
+        }
+        
+        // Build tree structure
+        function buildTree(data) {
+            const tree = {};
+            
+            // Build tree from all players' build orders
+            data.players.forEach(player => {
+                const combined = combineConsecutive(player.builds);
+                let currentNode = tree;
+                
+                combined.forEach((item, depth) => {
+                    const key = item.count > 1 ? `${item.name} x${item.count}` : item.name;
+                    
+                    if (!currentNode[key]) {
+                        currentNode[key] = {
+                            name: key,
+                            count: 0,
+                            totalSkill: 0,
+                            children: {}
+                        };
+                    }
+                    
+                    currentNode[key].count++;
+                    currentNode[key].totalSkill += player.skill;
+                    
+                    currentNode = currentNode[key].children;
+                });
+            });
+            
+            renderTree(tree);
+        }
+        
+        // Render tree HTML
+        function renderTree(tree) {
+            const container = document.getElementById('treeContainer');
+            container.innerHTML = '';
+            
+            const rootNodes = Object.values(tree);
+            if (rootNodes.length === 0) {
+                container.innerHTML = '<div class="loading">No build data available</div>';
+                return;
+            }
+            
+            rootNodes.forEach(node => {
+                container.appendChild(createNodeElement(node, 0));
+            });
+        }
+        
+        // Create a node element
+        function createNodeElement(node, depth) {
+            const nodeDiv = document.createElement('div');
+            nodeDiv.className = 'tree-node';
+            
+            const avgSkill = (node.totalSkill / node.count).toFixed(1);
+            const hasChildren = Object.keys(node.children).length > 0;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'node-content';
+            
+            const expandIcon = document.createElement('span');
+            expandIcon.className = 'expand-icon';
+            expandIcon.textContent = hasChildren ? '▶' : '•';
+            if (!hasChildren) expandIcon.classList.add('no-children');
+            
+            const itemName = document.createElement('span');
+            itemName.className = 'item-name';
+            itemName.textContent = node.name;
+            
+            const countBadge = document.createElement('span');
+            countBadge.className = 'item-count';
+            countBadge.textContent = `${node.count} players`;
+            
+            const skillBadge = document.createElement('span');
+            skillBadge.className = 'item-skill';
+            skillBadge.textContent = `Avg: ${avgSkill}`;
+            
+            contentDiv.appendChild(expandIcon);
+            contentDiv.appendChild(itemName);
+            contentDiv.appendChild(countBadge);
+            contentDiv.appendChild(skillBadge);
+            
+            const childrenDiv = document.createElement('div');
+            childrenDiv.className = 'children';
+            
+            if (hasChildren) {
+                const childNodes = Object.values(node.children)
+                    .sort((a, b) => b.count - a.count); // Sort by count descending
+                
+                childNodes.forEach(child => {
+                    childrenDiv.appendChild(createNodeElement(child, depth + 1));
+                });
+                
+                contentDiv.onclick = () => {
+                    childrenDiv.classList.toggle('expanded');
+                    expandIcon.textContent = childrenDiv.classList.contains('expanded') ? '▼' : '▶';
+                };
+            }
+            
+            nodeDiv.appendChild(contentDiv);
+            nodeDiv.appendChild(childrenDiv);
+            
+            return nodeDiv;
+        }
+        
+        // Show statistics
+        function showStats(data) {
+            const statsContainer = document.getElementById('statsContainer');
+            const statsContent = document.getElementById('statsContent');
+            
+            statsContainer.style.display = 'block';
+            
+            const totalPlayers = data.players.length;
+            const avgSkill = (data.players.reduce((sum, p) => sum + p.skill, 0) / totalPlayers).toFixed(1);
+            const maxSkill = Math.max(...data.players.map(p => p.skill)).toFixed(1);
+            const minSkill = Math.min(...data.players.map(p => p.skill)).toFixed(1);
+            
+            // Get most common first build
+            const firstBuilds = {};
+            data.players.forEach(p => {
+                if (p.builds.length > 0) {
+                    const first = p.builds[0];
+                    firstBuilds[first] = (firstBuilds[first] || 0) + 1;
+                }
+            });
+            const mostCommon = Object.entries(firstBuilds)
+                .sort((a, b) => b[1] - a[1])[0];
+            
+            statsContent.innerHTML = `
+                <p><strong>Total Players:</strong> ${totalPlayers}</p>
+                <p><strong>Average Skill:</strong> ${avgSkill} (range: ${minSkill} - ${maxSkill})</p>
+                <p><strong>Most Common First Build:</strong> ${mostCommon[0]} (${mostCommon[1]} players, ${(mostCommon[1]/totalPlayers*100).toFixed(1)}%)</p>
+            `;
+        }
+        
+        // Initialize
+        initPositionSelector();
+    </script>
+</body>
+</html>

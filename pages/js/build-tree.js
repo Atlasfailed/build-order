@@ -39,7 +39,7 @@ async function loadPosition(positionName) {
         const treeContainer = document.getElementById('treeContainer');
         treeContainer.innerHTML = '<div class="loading">Loading data...</div>';
         
-        const response = await fetch(`../output/position_csvs/${positionName}.csv`);
+        const response = await fetch(`output/position_csvs/${positionName}.csv`);
         if (!response.ok) {
             throw new Error(`Failed to load CSV file: ${response.statusText}`);
         }

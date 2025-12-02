@@ -19,3 +19,4 @@ venv/
 processed_replay_ids.txt
 failed_replay_downloads.txt
 
+pages/data/optimized/builds.parquet

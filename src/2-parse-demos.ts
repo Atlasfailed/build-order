@@ -293,6 +293,7 @@ async function parseSingleDemo(demoPath: string, replayId: string): Promise<{ po
                     allyTeamId: player.allyTeamId,
                     skill,
                     rank: player.rank,
+                    faction: player.faction,
                     position: { x: player.startPos.x, z: player.startPos.z },
                     wonGame,
                     buildOrder: playerBuilds,

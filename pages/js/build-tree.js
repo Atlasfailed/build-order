@@ -12,6 +12,11 @@ const positions = [
 ];
 
 let currentData = null;
+let currentFilters = {
+    minSkill: null,
+    playerName: null
+};
+let allPlayerNames = new Set();
 
 // Initialize position selector
 function initPositionSelector() {
@@ -39,14 +44,16 @@ async function loadPosition(positionName) {
         const treeContainer = document.getElementById('treeContainer');
         treeContainer.innerHTML = '<div class="loading">Loading data...</div>';
         
-        const response = await fetch(`output/position_csvs/${positionName}.csv`);
+        const response = await fetch(`../output/position_csvs/${positionName}.csv`);
         if (!response.ok) {
             throw new Error(`Failed to load CSV file: ${response.statusText}`);
         }
         const csvText = await response.text();
         
         currentData = parseCSV(csvText);
-        buildTree(currentData);
+        
+        // Apply current filters and build tree
+        applyFiltersAndRebuild();
         showStats(currentData);
         
     } catch (error) {
@@ -80,6 +87,11 @@ function parseCSV(csvText) {
         // Get player skill (row 4)
         const skillRow = lines[4].split(',');
         player.skill = parseFloat(skillRow[col]) || 0;
+        
+        // Add player name to global set for autocomplete
+        if (player.name) {
+            allPlayerNames.add(player.name);
+        }
         
         // Get build orders (starting from row with "Build 1")
         let buildNum = 1;
@@ -266,7 +278,115 @@ function showStats(data) {
     `;
 }
 
+// Apply filters and rebuild tree
+function applyFiltersAndRebuild() {
+    if (!currentData) return;
+    
+    // Filter players based on current filters
+    let filteredData = {
+        players: currentData.players.filter(player => {
+            // Apply skill filter
+            if (currentFilters.minSkill !== null && player.skill < currentFilters.minSkill) {
+                return false;
+            }
+            
+            // Apply player name filter
+            if (currentFilters.playerName && player.name !== currentFilters.playerName) {
+                return false;
+            }
+            
+            return true;
+        }),
+        builds: currentData.builds
+    };
+    
+    buildTree(filteredData);
+    showStats(filteredData);
+}
+
+// Setup player name autocomplete
+function setupPlayerAutocomplete() {
+    const input = document.getElementById('playerSearchInput');
+    const suggestions = document.getElementById('playerSuggestions');
+    
+    input.addEventListener('input', function() {
+        const value = this.value.toLowerCase();
+        suggestions.innerHTML = '';
+        
+        if (value.length < 2) {
+            suggestions.style.display = 'none';
+            return;
+        }
+        
+        // Filter player names
+        const matches = Array.from(allPlayerNames)
+            .filter(name => name.toLowerCase().includes(value))
+            .sort()
+            .slice(0, 10);
+        
+        if (matches.length === 0) {
+            suggestions.style.display = 'none';
+            return;
+        }
+        
+        // Show suggestions
+        matches.forEach(name => {
+            const div = document.createElement('div');
+            div.textContent = name;
+            div.style.padding = '8px 12px';
+            div.style.cursor = 'pointer';
+            div.style.borderBottom = '1px solid var(--border-color)';
+            
+            div.addEventListener('mouseenter', function() {
+                this.style.background = 'var(--hover-bg)';
+            });
+            
+            div.addEventListener('mouseleave', function() {
+                this.style.background = '';
+            });
+            
+            div.addEventListener('click', function() {
+                input.value = name;
+                suggestions.style.display = 'none';
+            });
+            
+            suggestions.appendChild(div);
+        });
+        
+        suggestions.style.display = 'block';
+    });
+    
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        if (e.target !== input && e.target !== suggestions) {
+            suggestions.style.display = 'none';
+        }
+    });
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     initPositionSelector();
+    setupPlayerAutocomplete();
+    
+    // Apply filters button
+    document.getElementById('applyFiltersBtn').addEventListener('click', function() {
+        const minSkillInput = document.getElementById('minSkillInput').value;
+        const playerNameInput = document.getElementById('playerSearchInput').value.trim();
+        
+        currentFilters.minSkill = minSkillInput ? parseFloat(minSkillInput) : null;
+        currentFilters.playerName = playerNameInput || null;
+        
+        applyFiltersAndRebuild();
+    });
+    
+    // Clear filters button
+    document.getElementById('clearFiltersBtn').addEventListener('click', function() {
+        document.getElementById('minSkillInput').value = '';
+        document.getElementById('playerSearchInput').value = '';
+        currentFilters.minSkill = null;
+        currentFilters.playerName = null;
+        
+        applyFiltersAndRebuild();
+    });
 });

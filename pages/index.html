@@ -30,6 +30,7 @@
             gap: 10px;
             justify-content: center;
             margin-bottom: 30px;
+            min-height: 50px;
         }
         
         .position-btn {
@@ -56,6 +57,14 @@
             color: white;
             border-color: var(--accent-color);
             font-weight: bold;
+        }
+        
+        .filters {
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
         }
         
         .stats {
@@ -195,7 +204,46 @@
             </p>
         </div>
         
-        <div class="position-selector" id="positionSelector"></div>
+        <div class="position-selector" id="positionSelector">
+            <button class="position-btn">FRONT 1</button>
+            <button class="position-btn">FRONT 2</button>
+            <button class="position-btn">GEO</button>
+            <button class="position-btn">GEO SEA</button>
+            <button class="position-btn">AIR</button>
+            <button class="position-btn">ECO</button>
+            <button class="position-btn">POND</button>
+            <button class="position-btn">LONG SEA</button>
+        </div>
+        
+        <div class="filters" id="filtersContainer">
+            <h3 style="color: var(--accent-color); margin-bottom: 15px;">Filters</h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; align-items: flex-start;">
+                <div style="flex: 1 1 200px; min-width: 200px;">
+                    <label for="minSkillInput" style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--text-primary);">Minimum Skill (OS):</label>
+                    <input type="number" id="minSkillInput" placeholder="e.g., 25" step="0.1" 
+                           style="width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--background-color); color: var(--text-primary); font-size: 1rem; box-sizing: border-box;">
+                </div>
+                <div style="flex: 1 1 200px; min-width: 200px;">
+                    <label for="factionSelect" style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--text-primary);">Faction:</label>
+                    <select id="factionSelect" style="width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--background-color); color: var(--text-primary); font-size: 1rem; cursor: pointer; box-sizing: border-box;">
+                        <option value="">All Factions</option>
+                        <option value="arm">Armada</option>
+                        <option value="cor">Cortex</option>
+                        <option value="leg">Legion</option>
+                    </select>
+                </div>
+                <div style="flex: 1 1 200px; min-width: 200px; position: relative;">
+                    <label for="playerSearchInput" style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--text-primary);">Player Name:</label>
+                    <input type="text" id="playerSearchInput" placeholder="Type player name..." 
+                           style="width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--background-color); color: var(--text-primary); font-size: 1rem; box-sizing: border-box;">
+                    <div id="playerSuggestions" style="position: absolute; z-index: 1000; background: var(--container-bg); border: 1px solid var(--border-color); border-radius: 4px; max-height: 200px; overflow-y: auto; display: none; margin-top: 2px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); left: 0; right: 0;"></div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button id="applyFiltersBtn" style="padding: 10px 24px; background: var(--accent-color); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 1rem; transition: all 0.2s;">Apply Filters</button>
+                <button id="clearFiltersBtn" style="padding: 10px 24px; background: var(--border-color); color: var(--text-primary); border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 1rem; transition: all 0.2s;">Clear</button>
+            </div>
+        </div>
         
         <div class="stats" id="statsContainer" style="display: none;">
             <h3>Position Statistics</h3>
@@ -212,12 +260,16 @@
         <img src="images/logo.png" alt="Logo" class="footer-logo">
     </div>
 
-    <script src="js/build-tree.js"></script>
     <script>
+        console.log('Inline script executing...');
         // Mobile menu toggle
-        document.getElementById('navToggle').addEventListener('click', function() {
-            document.getElementById('navMenu').classList.toggle('active');
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOMContentLoaded in inline script');
+            document.getElementById('navToggle').addEventListener('click', function() {
+                document.getElementById('navMenu').classList.toggle('active');
+            });
         });
     </script>
+    <script type="module" src="js/build-tree-parquet.js"></script>
 </body>
 </html>

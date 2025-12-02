@@ -75,9 +75,15 @@ def load_parsed_data(parsed_dir: Path) -> Tuple[Dict, Dict]:
             data = json.load(f)
             game_data[data['replayId']] = data
     
-    # Load builds-with-winners.jsonl (has correct won_game data)
-    builds_file = parsed_dir / "builds-with-winners.jsonl"
+    # Load builds.jsonl (prefer enriched version)
+    enriched_file = parsed_dir / "builds-enriched.jsonl"
+    builds_file = enriched_file if enriched_file.exists() else parsed_dir / "builds.jsonl"
+    if not builds_file.exists():
+        # Fallback to old file name if it exists
+        builds_file = parsed_dir / "builds-with-winners.jsonl"
+    
     if builds_file.exists():
+        print(f"Loading builds from: {builds_file.name}")
         with open(builds_file, 'r', encoding='utf-8') as f:
             for line in f:
                 if line.strip():
@@ -356,7 +362,7 @@ def main():
     
     # Setup paths
     base_dir = Path(__file__).parent.parent
-    labels_file = base_dir / "POSITION-LABELING-LINKS-WITH-PLAYERS.txt"
+    labels_file = base_dir / "archive" / "POSITION-LABELING-LINKS-WITH-PLAYERS.txt"
     parsed_dir = base_dir / "data" / "parsed"
     output_dir = base_dir / "output" / "position_csvs"
     
@@ -397,10 +403,26 @@ def main():
     print("\n📄 Step 5: Exporting CSV files per position...")
     export_position_csvs(assignments, builds_data, game_data, output_dir)
     
+    # Step 6: Save position assignments for Parquet optimization
+    print("\n💾 Step 6: Saving position assignments...")
+    analysis_dir = base_dir / "data" / "analysis"
+    analysis_dir.mkdir(parents=True, exist_ok=True)
+    
+    assignments_file = analysis_dir / "position-assignments.jsonl"
+    with open(assignments_file, 'w', encoding='utf-8') as f:
+        for key, assignment in assignments.items():
+            # Add the key (game_id, player_name) to the assignment
+            assignment['game_id'] = key[0]
+            assignment['player_name'] = key[1]
+            f.write(json.dumps(assignment) + '\n')
+    
+    print(f"  ✓ Saved {len(assignments)} assignments to {assignments_file}")
+    
     print("\n" + "=" * 60)
     print("✅ Export Complete!")
     print("=" * 60)
     print(f"\nCSV files saved to: {output_dir}")
+    print(f"Position assignments saved to: {assignments_file}")
     print(f"Total positions exported: {len([p for p in POSITION_NAMES if (output_dir / f'position_{p}.csv').exists()])}")
 
 

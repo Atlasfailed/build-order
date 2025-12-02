@@ -1,6 +1,10 @@
 # Ignore entire data directory
 data/
 
+# Ignore output and archive directories
+output/
+archive/
+
 # Python
 __pycache__/
 *.py[cod]

@@ -1,0 +1,8 @@
+# Don't commit the large full builds file
+data/optimized/builds.parquet
+data/optimized/positions_metadata.parquet
+
+# Commit everything else in data/optimized
+!data/
+!data/optimized/
+!data/optimized/**

@@ -1,10 +1,95 @@
-# BAR Position Analysis Pipeline
+# BAR Position Analysis
 
-Comprehensive build-order analysis system for Beyond All Reason's Supreme Isthmus map.
+Analyze spawn positions and build orders from Beyond All Reason replays of Supreme Isthmus map.
 
-## Overview
+## Workflow
 
-This pipeline downloads replays, clusters spawn positions, analyzes build orders for high-skill players, and generates interactive visualizations showing what strategies work best at each position.
+1. **Configure parameters** - Edit `config/config.json` to define replay filters
+2. **Download replay JSONs** - Fetch replay metadata from BAR API
+3. **Download replay SDFZ files** - Download actual replay files
+4. **Parse replays** - Extract positions and build orders from SDFZ files
+5. **Generate position CSVs** - Export build orders organized by spawn position
+6. **Generate HTML** - Create interactive visualization at `pages/index.html`
+
+## Quick Start
+
+### Run All Steps
+
+```bash
+./run.sh
+```
+
+This runs the complete workflow from download to CSV export.
+
+### Or Run Steps Individually
+
+#### 1. Configure Parameters
+
+Edit `config/config.json`:
+
+```json
+{
+  "filters": {
+    "map_name": "Supreme Isthmus v2.1",
+    "min_skill_threshold": 35,
+    "date_from": "2025-07-01",
+    "date_to": "2025-12-31"
+  }
+}
+```
+
+#### 2. Download Replay JSONs & SDFZ Files
+
+```bash
+npm run download
+```
+
+This downloads replay metadata and SDFZ files to `data/replays/`.
+
+#### 3. Parse Replays
+
+```bash
+npm run parse
+```
+
+Extracts spawn positions and build orders from SDFZ files. Creates:
+- `data/parsed/positions.jsonl` - Player spawn positions
+- `data/parsed/builds.jsonl` - Build orders
+
+#### 4. Generate Position CSVs
+
+```bash
+npm run export-csv
+```
+
+Creates CSV files in `output/position_csvs/`, one per spawn position (front-1, front-2, air, eco, etc.).
+
+#### 5. View Results
+
+Open `pages/index.html` in your browser to view the interactive visualization.
+
+## Setup
+
+### Python Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### TypeScript Setup
+
+```bash
+cd ..
+npm install
+npm run build
+cd bar-position-analysis
+```
+
+## Output
+
+- **Position CSVs**: `output/position_csvs/position_*.csv`
+- **Interactive HTML**: `pages/index.html`
+- **Parsed Data**: `data/parsed/*.jsonl`
 
 ## Project Structure
 
@@ -14,88 +99,70 @@ bar-position-analysis/
 │   └── config.json              # Configuration
 ├── data/
 │   ├── replays/                 # Downloaded .sdfz files
-│   ├── parsed/                  # Parsed JSON data from demos
-│   └── analysis/                # Analysis results
+│   └── parsed/                  # Parsed JSON data
 ├── src/
-│   ├── 1-download-replays.py    # Download replays from BAR API
-│   ├── 2-parse-demos.ts         # Parse .sdfz files, extract positions & builds
-│   ├── 3-cluster-positions.py   # Cluster spawn positions into roles
-│   ├── 4-cluster-builds.py      # Cluster build orders per position
-│   ├── 5-analyze-success.py     # Analyze build success rates
-│   └── 6-visualize.py           # Generate interactive visualizations
+│   ├── 1-download-replays.py    # Download replays
+│   ├── 2-parse-demos.ts         # Parse .sdfz files
+│   └── 7-assign-positions-and-export.py  # Generate CSVs
 ├── output/
-│   ├── reports/                 # JSON/CSV reports
-│   └── visualizations/          # HTML dashboards
-└── run-pipeline.sh              # Run full pipeline
-```
-
-## Setup
-
-### Python Dependencies
-
-```bash
-pip install aiohttp aiofiles scikit-learn pandas numpy plotly scipy
-```
-
-### TypeScript Setup
-
-This project uses the existing demo parser from the parent directory. Make sure you've run:
-
-```bash
-cd ..
-npm install
-npm run build
-```
-
-## Usage
-
-### Run Full Pipeline
-
-```bash
-./run-pipeline.sh
-```
-
-### Run Individual Steps
-
-```bash
-# 1. Download replays
-python src/1-download-replays.py
-
-# 2. Parse demos (requires compiled TypeScript)
-npm run parse-demos
-
-# 3. Cluster positions
-python src/3-cluster-positions.py
-
-# 4. Cluster build orders
-python src/4-cluster-builds.py
-
-# 5. Analyze success rates
-python src/5-analyze-success.py
-
-# 6. Generate visualizations
-python src/6-visualize.py
+│   └── position_csvs/           # CSV files per position
+├── pages/
+│   └── index.html               # Interactive visualization
+└── archive/                     # Old documentation
 ```
 
 ## Configuration
 
-Edit `config/config.json` to customize:
-- API filters (date range, skill threshold)
-- Clustering parameters
-- Output formats
+All settings in `config/config.json`:
 
-## Output
+### API Filters
+- `map_name`: Map to analyze (default: "Supreme Isthmus v2.1")
+- `min_skill_threshold`: Minimum player skill (default: 35)
+- `date_from` / `date_to`: Date range for replays
 
-- **Reports**: CSV and JSON files in `output/reports/`
-- **Visualizations**: Interactive HTML dashboards in `output/visualizations/`
-- **Raw Data**: Parsed game data in `data/parsed/`
+### Analysis Parameters
+- `time_window_seconds`: How much of each game to analyze (default: 360 = 6 minutes)
+- `high_skill_threshold`: Define "high skill" players (default: 40)
 
-## Key Features
+### Paths
+- `replays`: Where to download SDFZ files
+- `parsed`: Where to store parsed data
+- Output directories for CSVs and visualizations
 
-1. **Automated Replay Download**: Fetches filtered replays from BAR API
-2. **Position Identification**: Clusters all 8 positions per team
-3. **Build Order Clustering**: Finds common build patterns
-4. **Success Rate Analysis**: Identifies what works for high-skill players
-5. **Interactive Visualizations**: Better insights through visual exploration
-6. **Modular Pipeline**: Run individual components independently
+## The 8 Positions
+
+The map has 8 mirrored spawn positions:
+
+1. **front-1** - Front line position 1
+2. **front-2** - Front line position 2
+3. **geo** - Geothermal position
+4. **geo-sea** - Geothermal near sea
+5. **air** - Air position
+6. **eco** - Economy position
+7. **pond** - Pond position
+8. **long-sea** - Long sea position
+
+Each CSV contains build orders from players who spawned at that position.
+
+## Troubleshooting
+
+### No replays downloaded
+- Check internet connection
+- Verify filters in `config.json` aren't too restrictive
+- Check BAR API status
+
+### Parsing errors
+- Ensure demo parser is built: `cd .. && npm run build`
+- Check replay files exist in `data/replays/`
+
+### Position assignment errors
+- Need manual position labels in root directory (legacy system)
+- Or use clustering scripts in archive/ for automated position detection
+
+## Archive
+
+Old documentation and experimental scripts are in `archive/`:
+- Automated clustering pipeline (steps 3-6)
+- Extended usage guides
+- Implementation details
 

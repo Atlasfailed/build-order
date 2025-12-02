@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head><title>Test Parquet</title></head>
+<body>
+<h1>Testing Parquet Loading</h1>
+<pre id="output"></pre>
+<script type="module">
+import { parquetRead } from 'https://cdn.jsdelivr.net/npm/hyparquet@1.6.0/+esm';
+
+const output = document.getElementById('output');
+
+async function test() {
+    const response = await fetch('data/optimized/lookup_units.parquet');
+    const arrayBuffer = await response.arrayBuffer();
+    
+    parquetRead({
+        file: arrayBuffer,
+        onComplete: data => {
+            output.textContent = 'Raw data (first 5 rows):\n' + 
+                JSON.stringify(data.slice(0, 5), null, 2) + 
+                '\n\nData type: ' + typeof data[0] + 
+                '\n\nIs array: ' + Array.isArray(data[0]);
+        }
+    });
+}
+
+test();
+</script>
+</body>
+</html>

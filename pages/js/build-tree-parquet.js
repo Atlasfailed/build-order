@@ -1,5 +1,7 @@
-// Build Order Tree Explorer - Parquet Version
+// Build Order Tree Explorer - Lazy Loading Version
 // Uses hyparquet library to read Parquet files
+// Implements 2-tier lazy loading: prefixes (Tier 1) loaded immediately,
+// full builds (Tier 2) loaded on-demand when user expands past step 10
 
 console.log('build-tree-parquet.js loading...');
 
@@ -26,9 +28,13 @@ let lookupData = {
 
 let currentData = {
     index: null,
-    builds: null,
-    positionId: null
+    prefixes: null,  // Tier 1: prefix data (loaded immediately)
+    positionId: null,
+    positionName: null
 };
+
+// Cache for lazy-loaded full builds (Tier 2)
+let fullBuildsCache = {};
 
 let currentFilters = {
     minSkill: null,
@@ -42,6 +48,7 @@ let allPlayerNames = new Set();
 const SCHEMAS = {
     index: ['replay_id', 'player_id', 'skill', 'rank', 'won_game', 'position_id', 'distance_from_centroid', 'faction'],
     builds: ['replay_id', 'player_id', 'build_index', 'time', 'unit_id'],
+    builds_chunk: ['prefix_hash', 'replay_id', 'player_id', 'build_index', 'time', 'unit_id'],
     lookup_units: ['unit_id', 'unit_name'],
     lookup_players: ['player_id', 'player_name'],
     lookup_positions: ['position_id', 'position_name'],
@@ -146,7 +153,7 @@ function initPositionSelector() {
     });
 }
 
-// Load position data
+// Load position data (Tier 1: prefixes only)
 async function loadPosition(positionId, positionName) {
     try {
         // Update active button
@@ -159,34 +166,30 @@ async function loadPosition(positionId, positionName) {
         
         console.log(`Loading position ${positionId} (${positionName})...`);
         
-        // Load index and builds for this position
-        const [index, builds] = await Promise.all([
+        // Load index and prefixes for this position
+        const [index, prefixes] = await Promise.all([
             loadParquet('data/optimized/index.parquet', 'index'),
-            loadParquet(`data/optimized/builds_by_position/builds_position_${positionId}_${positionName}.parquet`, 'builds')
+            loadPrefixes(positionId, positionName)
         ]);
         
         console.log('Data loaded:', {
             indexRows: index.length,
-            buildRows: builds.length
+            prefixes: prefixes.unique_prefixes
         });
         
         // Filter index for this position
         currentData.index = index.filter(row => row.position_id === positionId);
-        currentData.builds = builds;
+        currentData.prefixes = prefixes;
         currentData.positionId = positionId;
+        currentData.positionName = positionName;
+        
+        // Clear cache when switching positions
+        fullBuildsCache = {};
         
         console.log('Filtered data:', {
             players: currentData.index.length,
-            builds: currentData.builds.length
+            uniquePrefixes: prefixes.prefixes.length
         });
-        
-        // Sample first player to see data structure
-        if (currentData.index.length > 0) {
-            console.log('Sample player:', currentData.index[0]);
-        }
-        if (currentData.builds.length > 0) {
-            console.log('Sample build:', currentData.builds[0]);
-        }
         
         // Apply filters and build tree
         applyFiltersAndRebuild();
@@ -198,7 +201,58 @@ async function loadPosition(positionId, positionName) {
     }
 }
 
-// Build tree structure from filtered data
+// Load prefix data (Tier 1 - JSON)
+async function loadPrefixes(positionId, positionName) {
+    const url = `data/optimized/builds_lazy_load/builds_position_${positionId}_${positionName}_prefixes.json`;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        console.log('Loaded prefixes:', data);
+        return data;
+    } catch (error) {
+        console.error(`Error loading prefixes from ${url}:`, error);
+        throw error;
+    }
+}
+
+// Load full builds for a specific chunk (Tier 2 - lazy loaded)
+async function loadChunk(chunkId) {
+    const cacheKey = `chunk_${chunkId}`;
+    if (fullBuildsCache[cacheKey]) {
+        console.log(`Using cached chunk ${chunkId}`);
+        return fullBuildsCache[cacheKey];
+    }
+    
+    const url = `data/optimized/builds_lazy_load/builds_position_${currentData.positionId}_chunk_${chunkId}.parquet`;
+    console.log(`Lazy loading chunk ${chunkId}...`);
+    
+    try {
+        const builds = await loadParquet(url, 'builds_chunk');
+        
+        fullBuildsCache[cacheKey] = builds;
+        console.log(`Loaded chunk ${chunkId}: ${builds.length} builds`);
+        return builds;
+    } catch (error) {
+        console.error(`Error loading chunk from ${url}:`, error);
+        return [];
+    }
+}
+
+// Load full builds for a specific prefix from its chunk
+async function loadFullBuilds(prefixHash, chunkId) {
+    if (!chunkId && chunkId !== 0) {
+        console.log(`No chunk ID for prefix ${prefixHash}`);
+        return [];
+    }
+    
+    const chunk = await loadChunk(chunkId);
+    
+    // Filter to just this prefix
+    return chunk.filter(build => build.prefix_hash === prefixHash);
+}
+
+// Build tree structure from prefix data
 function buildTree(filteredPlayers) {
     if (!filteredPlayers || filteredPlayers.length === 0) {
         document.getElementById('treeContainer').innerHTML = 
@@ -208,53 +262,33 @@ function buildTree(filteredPlayers) {
     
     console.log('Building tree for', filteredPlayers.length, 'players');
     
-    // Create player ID set for quick lookup
-    const playerSet = new Set();
-    const playerMap = new Map();
+    if (!currentData.prefixes) {
+        console.error('No prefix data available');
+        return;
+    }
     
-    filteredPlayers.forEach(player => {
-        const key = `${player.replay_id}-${player.player_id}`;
-        playerSet.add(key);
-        playerMap.set(key, player);
-    });
-    
-    // Get builds for these players
-    const playerBuilds = currentData.builds.filter(build => {
-        const key = `${build.replay_id}-${build.player_id}`;
-        return playerSet.has(key);
-    });
-    
-    console.log('Filtered builds:', playerBuilds.length);
-    
-    // Group builds by player
-    const buildsByPlayer = new Map();
-    playerBuilds.forEach(build => {
-        const key = `${build.replay_id}-${build.player_id}`;
-        if (!buildsByPlayer.has(key)) {
-            buildsByPlayer.set(key, []);
-        }
-        buildsByPlayer.get(key).push(build);
-    });
-    
-    // Sort builds by build_index for each player
-    buildsByPlayer.forEach((builds, key) => {
-        builds.sort((a, b) => a.build_index - b.build_index);
-    });
-    
-    // Build tree
+    // Build tree from prefix data
     const tree = {};
+    const prefixes = currentData.prefixes.prefixes;
     
-    buildsByPlayer.forEach((builds, key) => {
-        const player = playerMap.get(key);
-        if (!player) return;
+    prefixes.forEach(prefix => {
+        // Apply filters to this prefix
+        if (currentFilters.minSkill !== null && prefix.avg_skill < currentFilters.minSkill) {
+            return;
+        }
+        
+        if (currentFilters.faction) {
+            const factionCount = prefix.faction_counts[currentFilters.faction] || 0;
+            if (factionCount === 0) return;
+        }
         
         // Convert unit IDs to names and combine consecutive items
-        const buildNames = builds.map(b => getUnitName(b.unit_id));
+        const buildNames = prefix.prefix_units.map(unitId => getUnitName(unitId));
         const combined = combineConsecutive(buildNames);
         
         let currentNode = tree;
         
-        combined.forEach((item) => {
+        combined.forEach((item, index) => {
             const nodeKey = item.count > 1 ? `${item.name} x${item.count}` : item.name;
             
             if (!currentNode[nodeKey]) {
@@ -262,19 +296,23 @@ function buildTree(filteredPlayers) {
                     name: nodeKey,
                     count: 0,
                     totalSkill: 0,
-                    children: {}
+                    children: {},
+                    prefixHash: prefix.prefix_hash,
+                    chunkId: prefix.chunk_id,
+                    isLastPrefixNode: index === combined.length - 1,
+                    hasContinuation: prefix.has_continuation
                 };
             }
             
-            currentNode[nodeKey].count++;
-            currentNode[nodeKey].totalSkill += player.skill;
+            currentNode[nodeKey].count += prefix.player_count;
+            currentNode[nodeKey].totalSkill += prefix.avg_skill * prefix.player_count;
             
             currentNode = currentNode[nodeKey].children;
         });
     });
     
     renderTree(tree);
-    showStats(filteredPlayers, buildsByPlayer.size);
+    showStats(filteredPlayers, prefixes.length);
 }
 
 // Get unit name from ID
@@ -343,14 +381,23 @@ function createNodeElement(node, depth) {
     
     const avgSkill = (node.totalSkill / node.count).toFixed(1);
     const hasChildren = Object.keys(node.children).length > 0;
+    const needsLazyLoad = node.isLastPrefixNode && node.hasContinuation && !hasChildren;
     
     const contentDiv = document.createElement('div');
     contentDiv.className = 'node-content';
     
     const expandIcon = document.createElement('span');
     expandIcon.className = 'expand-icon';
-    expandIcon.textContent = hasChildren ? '▶' : '•';
-    if (!hasChildren) expandIcon.classList.add('no-children');
+    
+    if (needsLazyLoad) {
+        expandIcon.textContent = '⏵';  // Different icon to indicate lazy load
+        expandIcon.title = 'Click to load more builds';
+    } else if (hasChildren) {
+        expandIcon.textContent = '▶';
+    } else {
+        expandIcon.textContent = '•';
+        expandIcon.classList.add('no-children');
+    }
     
     const itemName = document.createElement('span');
     itemName.className = 'item-name';
@@ -384,12 +431,106 @@ function createNodeElement(node, depth) {
             childrenDiv.classList.toggle('expanded');
             expandIcon.textContent = childrenDiv.classList.contains('expanded') ? '▼' : '▶';
         };
+    } else if (needsLazyLoad) {
+        // Lazy load on click
+        let isLoading = false;
+        let isLoaded = false;
+        
+        contentDiv.onclick = async () => {
+            if (isLoading || isLoaded) {
+                childrenDiv.classList.toggle('expanded');
+                expandIcon.textContent = childrenDiv.classList.contains('expanded') ? '▼' : '⏵';
+                return;
+            }
+            
+            isLoading = true;
+            expandIcon.textContent = '⏳';
+            expandIcon.title = 'Loading...';
+            
+            try {
+                const builds = await loadFullBuilds(node.prefixHash, node.chunkId);
+                
+                if (builds.length > 0) {
+                    // Build continuation tree from loaded builds
+                    const continuationTree = buildContinuationTree(builds, node.prefixHash);
+                    
+                    // Add continuation nodes
+                    const childNodes = Object.values(continuationTree)
+                        .sort((a, b) => b.count - a.count);
+                    
+                    childNodes.forEach(child => {
+                        childrenDiv.appendChild(createNodeElement(child, depth + 1));
+                    });
+                    
+                    isLoaded = true;
+                    childrenDiv.classList.add('expanded');
+                    expandIcon.textContent = '▼';
+                    expandIcon.title = '';
+                } else {
+                    expandIcon.textContent = '•';
+                    expandIcon.classList.add('no-children');
+                    expandIcon.title = 'No more builds available';
+                }
+            } catch (error) {
+                console.error('Error loading continuation:', error);
+                expandIcon.textContent = '⚠';
+                expandIcon.title = 'Error loading builds';
+            } finally {
+                isLoading = false;
+            }
+        };
     }
     
     nodeDiv.appendChild(contentDiv);
     nodeDiv.appendChild(childrenDiv);
     
     return nodeDiv;
+}
+
+// Build continuation tree from lazy-loaded builds
+function buildContinuationTree(builds, prefixHash) {
+    const tree = {};
+    
+    // Group by player
+    const buildsByPlayer = new Map();
+    builds.forEach(build => {
+        const key = `${build.replay_id}-${build.player_id}`;
+        if (!buildsByPlayer.has(key)) {
+            buildsByPlayer.set(key, []);
+        }
+        buildsByPlayer.get(key).push(build);
+    });
+    
+    // Sort and build tree
+    buildsByPlayer.forEach(playerBuilds => {
+        playerBuilds.sort((a, b) => a.build_index - b.build_index);
+        
+        const buildNames = playerBuilds.map(b => getUnitName(b.unit_id));
+        const combined = combineConsecutive(buildNames);
+        
+        let currentNode = tree;
+        
+        combined.forEach((item) => {
+            const nodeKey = item.count > 1 ? `${item.name} x${item.count}` : item.name;
+            
+            if (!currentNode[nodeKey]) {
+                currentNode[nodeKey] = {
+                    name: nodeKey,
+                    count: 0,
+                    totalSkill: 0,
+                    children: {}
+                };
+            }
+            
+            currentNode[nodeKey].count++;
+            // Note: We don't have individual skill data in Tier 2, so we use a placeholder
+            currentNode[nodeKey].totalSkill += 25; // Approximate average
+            
+            currentNode = currentNode[nodeKey].children;
+        });
+    });
+    
+    return tree;
 }
 
 // Show statistics

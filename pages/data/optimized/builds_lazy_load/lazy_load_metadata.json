@@ -1,0 +1,74 @@
+{
+  "prefix_length": 10,
+  "positions": [
+    {
+      "position": "front-1",
+      "position_id": 0,
+      "tier1_size": 2140.5302734375,
+      "tier2_files": 109,
+      "tier2_total_size": 13516.7080078125,
+      "unique_prefixes": 10862
+    },
+    {
+      "position": "front-2",
+      "position_id": 1,
+      "tier1_size": 1944.91015625,
+      "tier2_files": 99,
+      "tier2_total_size": 13039.6171875,
+      "unique_prefixes": 9890
+    },
+    {
+      "position": "geo",
+      "position_id": 2,
+      "tier1_size": 1012.5947265625,
+      "tier2_files": 52,
+      "tier2_total_size": 10480.8623046875,
+      "unique_prefixes": 5198
+    },
+    {
+      "position": "geo-sea",
+      "position_id": 3,
+      "tier1_size": 910.9501953125,
+      "tier2_files": 47,
+      "tier2_total_size": 16176.1884765625,
+      "unique_prefixes": 4687
+    },
+    {
+      "position": "air",
+      "position_id": 4,
+      "tier1_size": 912.12109375,
+      "tier2_files": 48,
+      "tier2_total_size": 18060.8037109375,
+      "unique_prefixes": 4734
+    },
+    {
+      "position": "eco",
+      "position_id": 5,
+      "tier1_size": 599.046875,
+      "tier2_files": 31,
+      "tier2_total_size": 26547.6640625,
+      "unique_prefixes": 3088
+    },
+    {
+      "position": "pond",
+      "position_id": 6,
+      "tier1_size": 287.6083984375,
+      "tier2_files": 15,
+      "tier2_total_size": 10715.48828125,
+      "unique_prefixes": 1471
+    },
+    {
+      "position": "long-sea",
+      "position_id": 7,
+      "tier1_size": 1375.412109375,
+      "tier2_files": 71,
+      "tier2_total_size": 13377.765625,
+      "unique_prefixes": 7055
+    }
+  ],
+  "total_tier1_kb": 9183.2,
+  "total_tier2_kb": 121915.1,
+  "total_tier2_files": 472,
+  "original_size_mb": 13.52,
+  "reduction_percent": 33.7
+}

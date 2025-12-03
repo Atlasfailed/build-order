@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BAR Data Summary</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        .summary-page-header {
+            text-align: center;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .summary-page-header h1 {
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+            font-size: 2.5rem;
+        }
+        
+        .summary-page-header .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(88, 166, 255, 0.2);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+        
+        .chart-container {
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .chart-title {
+            color: var(--accent-color);
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .chart-description {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+        
+        .chart-plot {
+            width: 100%;
+            height: 500px;
+            border-radius: 4px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--accent-color);
+            font-size: 1.2em;
+        }
+        
+        .error {
+            background: rgba(220, 53, 69, 0.2);
+            border: 1px solid var(--negative-score);
+            color: var(--negative-score);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-brand">
+                <img src="images/logo.png" alt="Logo" class="nav-logo">
+                BAR Build Trees
+            </a>
+            <button class="nav-toggle" id="navToggle">☰</button>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html" class="nav-link">Build Trees</a></li>
+                <li><a href="data-summary.html" class="nav-link active">Data Summary</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="summary-page-header">
+            <h1>Data Summary</h1>
+            <p class="subtitle">
+                Overview of the replay dataset: game distribution over time and player skill levels.
+            </p>
+        </div>
+        
+        <!-- Stats Overview -->
+        <div class="stats-overview" id="statsOverview">
+            <div class="stat-card">
+                <div class="stat-value" id="totalGames">-</div>
+                <div class="stat-label">Total Games</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalPlayers">-</div>
+                <div class="stat-label">Total Players</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="dateRange">-</div>
+                <div class="stat-label">Date Range</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgSkill">-</div>
+                <div class="stat-label">Average Skill</div>
+            </div>
+        </div>
+        
+        <!-- Games Over Time Chart -->
+        <div class="chart-container">
+            <h3 class="chart-title">Games Played Over Time</h3>
+            <p class="chart-description">
+                Distribution of games by date showing when games were played. This distribution is created by two data gathering methods: first looking for recent replays that have a minimum average skill level. Second, adding games from top 100 players on the leaderboard to ensure high skill representation. Games by top 100 players did not have a date restriction except for the map version which is Supreme Isthmus v2.1.
+            </p>
+            <div id="gamesTimeChart" class="chart-plot">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Loading game distribution data...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Skill Distribution Chart -->
+        <div class="chart-container">
+            <h3 class="chart-title">Player Skill Distribution</h3>
+            <p class="chart-description">
+                Distribution of skill ratings across all games. Each player is counted once per game they played. For example, if a player played 10 games, they will be counted 10 times in this distribution. A player's 
+                skill rating is recorded at the time of each game. This means a player may appear in multiple skill brackets if their skill changed over time.
+            </p>
+            <div id="skillDistChart" class="chart-plot">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Loading skill distribution data...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align: center; margin: 2rem 0;">
+        <img src="images/logo.png" alt="Logo" class="footer-logo">
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('navToggle').addEventListener('click', function() {
+                document.getElementById('navMenu').classList.toggle('active');
+            });
+        });
+    </script>
+    <script src="js/data-summary.js"></script>
+</body>
+</html>

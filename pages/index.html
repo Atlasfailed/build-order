@@ -24,6 +24,60 @@
             line-height: 1.6;
         }
         
+        .caveats-section {
+            background: rgba(255, 152, 0, 0.1);
+            border: 2px solid #ff9800;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+        
+        .caveats-section h3 {
+            color: #ff9800;
+            margin: 0 0 1rem 0;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .caveats-section .warning-icon {
+            font-size: 1.5rem;
+        }
+        
+        .caveat-item {
+            background: var(--container-bg);
+            border-left: 4px solid #ff9800;
+            border-radius: 4px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .caveat-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .caveat-title {
+            color: var(--text-primary);
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            font-size: 1.05rem;
+        }
+        
+        .caveat-description {
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin: 0;
+        }
+        
+        .caveat-example {
+            color: #ff9800;
+            font-style: italic;
+            margin-top: 0.5rem;
+            font-size: 0.95rem;
+        }
+        
         .position-selector {
             display: flex;
             flex-wrap: wrap;
@@ -189,6 +243,7 @@
             <button class="nav-toggle" id="navToggle">☰</button>
             <ul class="nav-menu" id="navMenu">
                 <li><a href="index.html" class="nav-link active">Build Trees</a></li>
+                <li><a href="data-summary.html" class="nav-link">Data Summary</a></li>
             </ul>
         </div>
     </nav>
@@ -199,9 +254,45 @@
             <h1>Build Order Explorer</h1>
             <p class="subtitle">
                 Explore build order paths with player counts and average skill ratings.<br>
-                Click on any build item to expand and see what players built next.<br>
-                <em>Note: Build orders are based on player commands (queues), not on build starts or finishes. Queued commands may not always be executed.</em>
+                Click on any build item to expand and see what players built next.
             </p>
+        </div>
+        
+        <div class="caveats-section">
+            <h3><span class="warning-icon"></span> Important: How to Interpret This Data</h3>
+            
+            <div class="caveat-item">
+                <div class="caveat-title">Build Commands vs. Actual Builds</div>
+                <div class="caveat-description">
+                    This data shows <strong>build commands (queues)</strong>, not actual construction starts or completions. 
+                    Commands that were queued may never have been executed.
+                </div>
+                <div class="caveat-example">
+                    Example: A player queuing all mexes on the map would show up even if they only built a few.
+                </div>
+            </div>
+            
+            <div class="caveat-item">
+                <div class="caveat-title">No Game Settings Filter</div>
+                <div class="caveat-description">
+                    Build orders from <strong>all map types and game settings</strong> are included: evolved commanders, 
+                    ruins, lava maps, water maps, etc. These settings can significantly affect optimal build strategies.
+                </div>
+                <div class="caveat-example">
+                    Example: Builds on water maps may include ships that wouldn't appear on land-only maps.
+                </div>
+            </div>
+            
+            <div class="caveat-item">
+                <div class="caveat-title">Low Sample Size Builds Included</div>
+                <div class="caveat-description">
+                    Builds with very few players are still shown. While these might represent unique strategies by 
+                    high-level players, they could also be experimental, situational, or unsuccessful approaches.
+                </div>
+                <div class="caveat-example">
+                    Example: A build path with only 1-2 players may be innovative or it may be a failed experiment.
+                </div>
+            </div>
         </div>
         
         <div class="position-selector" id="positionSelector">

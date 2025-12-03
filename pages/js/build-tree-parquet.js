@@ -192,7 +192,7 @@ async function loadPosition(positionId, positionName) {
         });
         
         // Apply filters and build tree
-        applyFiltersAndRebuild();
+        await applyFiltersAndRebuild();
         
     } catch (error) {
         console.error('Error loading position:', error);
@@ -253,7 +253,7 @@ async function loadFullBuilds(prefixHash, chunkId) {
 }
 
 // Build tree structure from prefix data
-function buildTree(filteredPlayers) {
+async function buildTree(filteredPlayers) {
     if (!filteredPlayers || filteredPlayers.length === 0) {
         document.getElementById('treeContainer').innerHTML = 
             '<div class="loading">No players match the current filters</div>';
@@ -267,19 +267,55 @@ function buildTree(filteredPlayers) {
         return;
     }
     
+    // Get the set of filtered player IDs and replay IDs for player name filter
+    const filteredPlayerIds = new Set(filteredPlayers.map(p => p.player_id));
+    const filteredReplayPlayerPairs = new Set(
+        filteredPlayers.map(p => `${p.replay_id}-${p.player_id}`)
+    );
+    
     // Build tree from prefix data
     const tree = {};
     const prefixes = currentData.prefixes.prefixes;
     
-    prefixes.forEach(prefix => {
+    // If player name filter is active, we need to load chunks to filter by actual players
+    const needsPlayerFilter = currentFilters.playerName !== null;
+    
+    for (const prefix of prefixes) {
         // Apply filters to this prefix
         if (currentFilters.minSkill !== null && prefix.avg_skill < currentFilters.minSkill) {
-            return;
+            continue;
         }
         
         if (currentFilters.faction) {
             const factionCount = prefix.faction_counts[currentFilters.faction] || 0;
-            if (factionCount === 0) return;
+            if (factionCount === 0) continue;
+        }
+        
+        let actualPlayerCount = prefix.player_count;
+        let actualTotalSkill = prefix.avg_skill * prefix.player_count;
+        
+        // If player name filter is active, load the chunk and filter
+        if (needsPlayerFilter) {
+            const chunk = await loadChunk(prefix.chunk_id);
+            const prefixBuilds = chunk.filter(build => build.prefix_hash === prefix.prefix_hash);
+            
+            // Count unique filtered players in this prefix
+            const uniqueFilteredPlayers = new Set();
+            prefixBuilds.forEach(build => {
+                const key = `${build.replay_id}-${build.player_id}`;
+                if (filteredReplayPlayerPairs.has(key)) {
+                    uniqueFilteredPlayers.add(key);
+                }
+            });
+            
+            if (uniqueFilteredPlayers.size === 0) {
+                continue; // Skip this prefix if no filtered players used it
+            }
+            
+            // Adjust counts to reflect filtered players only
+            actualPlayerCount = uniqueFilteredPlayers.size;
+            // Keep average skill the same as we don't have per-player skill in chunks
+            actualTotalSkill = prefix.avg_skill * actualPlayerCount;
         }
         
         // Convert unit IDs to names and combine consecutive items
@@ -304,15 +340,15 @@ function buildTree(filteredPlayers) {
                 };
             }
             
-            currentNode[nodeKey].count += prefix.player_count;
-            currentNode[nodeKey].totalSkill += prefix.avg_skill * prefix.player_count;
+            currentNode[nodeKey].count += actualPlayerCount;
+            currentNode[nodeKey].totalSkill += actualTotalSkill;
             
             currentNode = currentNode[nodeKey].children;
         });
-    });
+    }
     
     renderTree(tree);
-    showStats(filteredPlayers, prefixes.length);
+    showStats(filteredPlayers, Object.keys(tree).length);
 }
 
 // Get unit name from ID
@@ -577,7 +613,7 @@ function showStats(players, playerCount) {
 }
 
 // Apply filters and rebuild
-function applyFiltersAndRebuild() {
+async function applyFiltersAndRebuild() {
     if (!currentData.index) {
         console.log('No index data available');
         return;
@@ -610,7 +646,7 @@ function applyFiltersAndRebuild() {
     
     console.log('Filtered players:', filtered.length);
     
-    buildTree(filtered);
+    await buildTree(filtered);
 }
 
 // Setup player name autocomplete
@@ -672,7 +708,7 @@ function setupPlayerAutocomplete() {
 
 // Setup filter buttons
 function setupFilterButtons() {
-    document.getElementById('applyFiltersBtn').addEventListener('click', function() {
+    document.getElementById('applyFiltersBtn').addEventListener('click', async function() {
         const minSkillInput = document.getElementById('minSkillInput').value;
         const factionSelect = document.getElementById('factionSelect').value;
         const playerNameInput = document.getElementById('playerSearchInput').value.trim();
@@ -681,10 +717,10 @@ function setupFilterButtons() {
         currentFilters.faction = factionSelect || null;
         currentFilters.playerName = playerNameInput || null;
         
-        applyFiltersAndRebuild();
+        await applyFiltersAndRebuild();
     });
     
-    document.getElementById('clearFiltersBtn').addEventListener('click', function() {
+    document.getElementById('clearFiltersBtn').addEventListener('click', async function() {
         document.getElementById('minSkillInput').value = '';
         document.getElementById('factionSelect').value = '';
         document.getElementById('playerSearchInput').value = '';
@@ -692,7 +728,7 @@ function setupFilterButtons() {
         currentFilters.faction = null;
         currentFilters.playerName = null;
         
-        applyFiltersAndRebuild();
+        await applyFiltersAndRebuild();
     });
 }
 
